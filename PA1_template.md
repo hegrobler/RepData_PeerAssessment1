@@ -15,14 +15,16 @@ Loading and preprocessing the data
 ========
 ### Load the required libraries
 
-```{r results='hide', message=FALSE, warning=FALSE}
+
+```r
 library(ggplot2)
 library(Hmisc)
 require(gridExtra)
 ```
 
 ### Load the required files 
-```{r}
+
+```r
 # Get the working directory and ensure that the required files exist
 path = getwd()
 
@@ -37,30 +39,60 @@ unzip('activity.zip', overwrite=TRUE)
 ```
 
 ### Read the data
-``` {r}
+
+```r
 # Read the data into a variable
 data <- read.csv('activity.csv')
 ```
 
 ### Explore the data
-```{r}
+
+```r
 # Check the structure of the data
 str(data)
 ```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Factor w/ 61 levels "2012-10-01","2012-10-02",..: 1 1 1 1 1 1 1 1 1 1 ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
 The dates are seen as factors lets convert them to dates
-``` {r}
+
+```r
 data$date <- as.Date(data$date)
 str(data)
 ```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : Date, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+```
 Looking at a summary of the data it should be noted that there are NA's in the steps variable
-```{r}
+
+```r
 summary(data)
+```
+
+```
+##      steps            date               interval   
+##  Min.   :  0.0   Min.   :2012-10-01   Min.   :   0  
+##  1st Qu.:  0.0   1st Qu.:2012-10-16   1st Qu.: 589  
+##  Median :  0.0   Median :2012-10-31   Median :1178  
+##  Mean   : 37.4   Mean   :2012-10-31   Mean   :1178  
+##  3rd Qu.: 12.0   3rd Qu.:2012-11-15   3rd Qu.:1766  
+##  Max.   :806.0   Max.   :2012-11-30   Max.   :2355  
+##  NA's   :2304
 ```
 
 What is mean total number of steps taken per day?
 =================
 We can ignore missing values for this question so let's remove them
-```{r}
+
+```r
 completeCases <- data[complete.cases(data),]
 
 # Calculate the total number of steps for each day and view a summary of the result
@@ -68,7 +100,18 @@ totals <- aggregate(steps ~ date, data = completeCases, FUN= "sum")
 head(totals)
 ```
 
-``` {r plot1}
+```
+##         date steps
+## 1 2012-10-02   126
+## 2 2012-10-03 11352
+## 3 2012-10-04 12116
+## 4 2012-10-05 13294
+## 5 2012-10-06 15420
+## 6 2012-10-07 11015
+```
+
+
+```r
 #Function is used to generate a histogram
 createDailyTotalsHist <- function (df) {
   # Define labels and defaults for later use in the charts
@@ -90,13 +133,16 @@ createDailyTotalsHist <- function (df) {
 createDailyTotalsHist(totals)
 ```
 
+![plot of chunk plot1](figure/plot1.png) 
+
 The above histogram shows the total number of steps between 2012-10-01 and 2012-11-30. The mean and median can also be seen on the plot, indicated in red and blue lines.
 
 What is the average daily activity pattern?
 ==================================================
 We will ignore missing values for this question as well. Note that the result shows the average accross all days broken down by interval.
 
-``` {r}
+
+```r
 completeCases <- data[complete.cases(data),]
 
 # Calculate the mean for each interval accross all days
@@ -104,9 +150,19 @@ means <- aggregate(steps ~ interval, data = completeCases, FUN= "mean")
 head(means)
 ```
 
-### Define defaults
-```{r}
+```
+##   interval   steps
+## 1        0 1.71698
+## 2        5 0.33962
+## 3       10 0.13208
+## 4       15 0.15094
+## 5       20 0.07547
+## 6       25 2.09434
+```
 
+### Define defaults
+
+```r
 # Function converts a interval into a time eg from 835 to 08:35
 lookupTime <- function (interval) {
   #Use dummy dates to build up a list of 5 minute intervals for 24 hours 
@@ -153,7 +209,8 @@ xlabelBreaks <- seq(0,2300, 200)
 ```
 ### Draw Plot
 Draw a line chart showing the average numberof steps taken per interval accross all days  
-```{r plot2}
+
+```r
 ggplot(data=means, aes(x=interval, y=steps)) + 
     labs(title=title, y="Average Number of Steps", x="Interval (5 min)") +
     scale_x_discrete(breaks=xlabelBreaks, labels=xlabels) +
@@ -162,24 +219,44 @@ ggplot(data=means, aes(x=interval, y=steps)) +
     annotate("text", x=maxInterval+550, y=maxSteps, label = maxLabel, size=5)
 ```
 
+![plot of chunk plot2](figure/plot2.png) 
+
 Imputing missing values
 ===================================
 Note the number of missing observations with missing (NA) values
-``` {r}
+
+```r
 length(which(is.na(data)))
+```
+
+```
+## [1] 2304
 ```
 
 Impute missing values by assigning the mean of each period to the missing value
 Eg. If a missing value appears on interval 0 for day 1 then the average of all the interval 0's 
 across all days will be used.
-```{r}
+
+```r
 # First we remove any NAs
 completeCases <- data[complete.cases(data),]
 
 # Then we calculate the mean for each interval across all days
 means <- aggregate(steps ~ interval, data = data, FUN= "mean")
 head(means)
+```
 
+```
+##   interval   steps
+## 1        0 1.71698
+## 2        5 0.33962
+## 3       10 0.13208
+## 4       15 0.15094
+## 5       20 0.07547
+## 6       25 2.09434
+```
+
+```r
 # Function returns the average steps based on the interval for that observation
 replaceNa <- function(observation) {
 
@@ -199,18 +276,36 @@ data$imputed <- apply(data, 1, replaceNa)
 data$steps <- sapply(data$imputed, function(x) { as.numeric(x)})
 head(data)
 ```
+
+```
+##     steps       date interval            imputed
+## 1 1.71698 2012-10-01        0   1.71698113207547
+## 2 0.33962 2012-10-01        5  0.339622641509434
+## 3 0.13208 2012-10-01       10  0.132075471698113
+## 4 0.15094 2012-10-01       15  0.150943396226415
+## 5 0.07547 2012-10-01       20 0.0754716981132075
+## 6 2.09434 2012-10-01       25   2.09433962264151
+```
 Note that there are no NAs left
-```{r}
+
+```r
 length(which(is.na(data)))
+```
+
+```
+## [1] 0
 ```
 
 Now that missing values were imputed lets calculate the daily totals again and compare
 the resulting historgram with the one created in the first step
-```{r plot3}
+
+```r
 # Calculate the total number of steps for each day and view a summary of the result
 imputedTotals <- aggregate(steps ~ date, data = data, FUN= "sum")
 createDailyTotalsHist(imputedTotals)
 ```
+
+![plot of chunk plot3](figure/plot3.png) 
 
 Even though the mean and median is more or less the same we can see a big difference in the 
 frequency that values appear between the first histogram and the one above. This higlights
@@ -221,20 +316,22 @@ severly skew your results.
 Are there differences in activity patterns between weekdays and weekends?
 ==================================================
 Add a column that indicates if the observation was taken on a week day or weekend day
-```{r}
+
+```r
 #Assign a column conaining Weekend or Weekday
 data$dayofweek <- weekdays(data$date) 
 data$type <- as.factor(ifelse(data$dayofweek %in% c("Saturday","Sunday"), "Weekend", "Weekday")) 
 ```
 Calculate the average number of steps taken per period
-```{r}
+
+```r
 #Apply the mean for each set of data
 weekdays <- aggregate(steps ~ interval, data = data[data$type == "Weekday",], FUN= "mean") 
 weekends <- aggregate(steps ~ interval, data = data[data$type == "Weekend",], FUN= "mean")
 ```
 Create the two charts to compare steps on weekend days and steps on weekdays
-```{r plot4}
 
+```r
 createPlot <- function(df, description, xlbl) {
   linePlot <- ggplot(data=df, aes(x=interval, y=steps)) +
       geom_line(colour="#A0A0A0", size=0.8) +
@@ -249,4 +346,6 @@ plot2 <- createPlot(weekdays, 'Weekday', 'Interval')
 
 grid.arrange(plot1,plot2, nrow=2)
 ```
+
+![plot of chunk plot4](figure/plot4.png) 
 

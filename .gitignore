@@ -1,0 +1,10 @@
+*.Rhistory
+*.pper
+.Rproj.user/6FFA8C29/sdb/prop/5BCC6E08
+.Rproj.user/6FFA8C29/sdb/prop/EAE2F8A4
+.Rproj.user/6FFA8C29/sdb/prop/INDEX
+*.RData
+.Rproj.user/6FFA8C29/sdb/s-F913F0CB/DF6AB872
+.Rproj.user/6FFA8C29/sdb/s-F913F0CB/lock_file
+*.Rproj
+activity.csv
